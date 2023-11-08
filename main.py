@@ -1,81 +1,93 @@
 import os
-import nltk
-from nltk.metrics import jaccard_distance
-from unicodedata import normalize
 from database import Atendimento
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
-from pprint import pprint
 
+# Getting database url
+URL = os.environ.get('URL')
 
-nltk.download('punkt')
-os.system('cls')
+# Create a database engine using the specified URL
+engine = create_engine(URL)
 
-# Criar sessão com o banco
-engine = create_engine('postgresql+psycopg2://postgres:dpmg2022@10.100.64.55:5432/bohr_estagiarios_2')
+# Create a session factory using the engine
 Session = sessionmaker(bind=engine)
+
+# Open a session using the session factory
 session = Session()
 
-print('Conexão com o banco estabelecida.')
+print('Connection with the database established.')
 
 
-def comparar_textos(textos):
-    texto_1 = set(nltk.word_tokenize(textos[0].lower()))
-    texto_2 = set(nltk.word_tokenize(textos[1].lower()))
-
-    similaridade = 1 - jaccard_distance(texto_1, texto_2)
-
-    return similaridade * 100
-
-def converte_dicionario(dado):
-    if dado:
+def convert_dictionary(data):
+    ''' Converts an 'dado' object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
+    if data:
         return {
-            coluna.name: getattr(dado, coluna.name)
-            for coluna in Atendimento.__table__.columns
+            column.name: getattr(data, column.name)
+            for column in Atendimento.__table__.columns
         }
 
 
-# Consulta dados da tabela tb_atendimento
+# Query data from the tb_atendimento table
 with session as sessao:
     try:
-        consulta_completa = sessao.query(Atendimento).filter(Atendimento.st_ativo == True).order_by(Atendimento.co_caso).order_by(Atendimento.dh_criacao)
-        atendimento_duplicados = [converte_dicionario(dado) for dado in consulta_completa.all()]
+        # Query active services and order them by case and creation date
+        services_query = sessao.query(Atendimento).filter(Atendimento.st_ativo == True).order_by(Atendimento.co_caso).order_by(Atendimento.dh_criacao)
+        
+        # Convert the result to a list of dictionaries using the `convert_dictionary` function
+        services_duplicates = [convert_dictionary(data) for data in services_query.all()]
 
-        consulta_casos = sessao.query(Atendimento.co_caso)
-        casos_duplicados = [dado[0] for dado in consulta_casos.all()]
+        # Query cases and store the case numbers in a list
+        case_query = sessao.query(Atendimento.co_caso)
+        cases_duplicates = [data[0] for data in case_query.all()]
+
     except SQLAlchemyError as e:
-        session.rollback()
+        # Rollback the transaction in case of an error
+        session.rollback() 
+
         raise e 
 
-casos = list(set(casos_duplicados))
+# Create a list of unique case numbers by converting the duplicates to a set and back to a list
+cases = list(set(cases_duplicates))
 
-print('Consulta dos dados duplicados retornada.')
+print('Duplicate data query returned.')
 
-for caso in casos:
-    atendimentos_do_caso = []
-    for atendimento in atendimento_duplicados:
-        if atendimento['co_caso'] == caso:
-            atendimentos_do_caso.append(atendimento)
+for case in cases:
+    # Create an empty list to store services related to a case
+    services_of_case = []  
 
-    if len(atendimentos_do_caso) > 1:
+    # Add services related to the case to the list
+    for service in services_duplicates:
+        if service['co_caso'] == case:
+            services_of_case.append(service)
 
-        textos_unicos = set()
-        atendimentos_excluidos = []
+    # Check if there are duplicate services
+    if len(services_of_case) > 1: 
 
-        for atendimento in atendimentos_do_caso:
-            texto = atendimento['ds_atendimento']
-            if texto not in textos_unicos:
-                textos_unicos.add(texto)
+        # Create a set to store unique service texts
+        unique_texts = set() 
+
+        # Create a list to store duplicate services to be excluded
+        services_excluded = []  
+
+        for service in services_of_case:
+            text = service['ds_atendimento']
+            if text not in unique_texts:
+                # Add the service's text to the set of unique texts
+                unique_texts.add(text)  
             else:
-                atendimentos_excluidos.append(atendimento)
-        if atendimentos_excluidos:
-            for dado in atendimentos_excluidos:
-                with open('atualizacao_atendimento.txt', 'a+') as arquivo:
-                    texto = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {dado['co_seq_atendimento']}; \n"
-                    arquivo.write(texto)
+                # Add duplicate services to the list
+                services_excluded.append(service)  
+
+        # Check if there are duplicate services to be excluded
+        if services_excluded:  
+            for dado in services_excluded:
+                with open('update_services.txt', 'a+') as arquivo:
+                    text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {dado['co_seq_atendimento']}; \n"
+                    
+                    # Write SQL statements to mark services as inactive
+                    arquivo.write(text)  
 
 
-print('Processo finalizado. Arquivo com os Updates gerado com sucesso!')
+print('Process finished. File with Updates generated successfully!')
     
