@@ -13,8 +13,12 @@ from pprint import pprint
 nltk.download('punkt')
 os.system('cls')
 
+
+# Getting database url
+URL = os.environ.get('URL')
+
 # Criar sessão com o banco
-engine = create_engine('postgresql+psycopg2://postgres:dpmg2022@10.100.64.55:5432/bohr_estagiarios_2')
+engine = create_engine(URL)
 Session = sessionmaker(bind=engine)
 session = Session()
 
