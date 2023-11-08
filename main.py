@@ -1,18 +1,8 @@
 import os
-import nltk
-from nltk.metrics import jaccard_distance
-from unicodedata import normalize
 from database import Atendimento
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime
-from pprint import pprint
-
-
-nltk.download('punkt')
-os.system('cls')
-
 
 # Getting database url
 URL = os.environ.get('URL')
@@ -24,14 +14,6 @@ session = Session()
 
 print('Conexão com o banco estabelecida.')
 
-
-def comparar_textos(textos):
-    texto_1 = set(nltk.word_tokenize(textos[0].lower()))
-    texto_2 = set(nltk.word_tokenize(textos[1].lower()))
-
-    similaridade = 1 - jaccard_distance(texto_1, texto_2)
-
-    return similaridade * 100
 
 def converte_dicionario(dado):
     if dado:
