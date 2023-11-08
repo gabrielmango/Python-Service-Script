@@ -98,11 +98,11 @@ To clone the repository and run the script, follow these steps:
 Before running the script, ensure you have the following prerequisites:
 
 - Python installed on your system.
-- The SQLAlchemy library installed. You can install it with the following command:
+- Install packages:
 
-   ```
-   pip install sqlalchemy
-   ```
+```
+pip install -r requirements.txt
+```
 
 ## Running the Script
 
