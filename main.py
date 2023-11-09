@@ -1,11 +1,14 @@
 import os
+import dotenv
 from database import Atendimento
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
 
+dotenv.load_dotenv()
+
 # Getting database url
-URL = os.environ.get('URL')
+URL = os.environ['URL']
 
 # Create a database engine using the specified URL
 engine = create_engine(URL)
