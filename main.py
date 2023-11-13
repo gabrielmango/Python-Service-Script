@@ -2,6 +2,7 @@ from database.conn import session
 from database.database import Atendimento
 from sqlalchemy.exc import SQLAlchemyError
 
+from pprint import pprint
 
 def convert_dictionary(data):
     ''' Converts an data object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
@@ -12,30 +13,26 @@ def convert_dictionary(data):
         }
 
 
-# Query data from the tb_atendimento table
-with session as sessao:
-    try:
-        # Query active services and order them by case and creation date
-        services_query = sessao.query(Atendimento) \
-        .filter(Atendimento.st_ativo == True) \
-        .order_by(Atendimento.co_caso) \
-        .order_by(Atendimento.dh_criacao)
-        
-        # Convert the result to a list of dictionaries using the `convert_dictionary` function
-        services_duplicates = [convert_dictionary(data) for data in services_query.all()]
+def query_cases():
+    ''' Queries all active cases in the database.'''
+    with session as sess:
+        try:
+            # Query active cases in the database
+            query_cases = sess.query(Atendimento.co_caso).filter(Atendimento.st_ativo == True)
 
-        # Query cases and store the case numbers in a list
-        case_query = sessao.query(Atendimento.co_caso)
-        cases_duplicates = [data[0] for data in case_query.all()]
+            cases = [case[0] for case in query_cases.all()]
 
-    except SQLAlchemyError as e:
-        # Rollback the transaction in case of an error
-        session.rollback() 
-
-        raise e 
+            return list(set(cases))
+        except SQLAlchemyError as e:
+            # Rollback the transaction in case of an error
+            sess.rollback()
+            raise e
 
 # Create a list of unique case numbers by converting the duplicates to a set and back to a list
-cases = list(set(cases_duplicates))
+cases = query_cases()
+
+pprint(len(cases))
+input()
 
 print('Duplicate data query returned.')
 
