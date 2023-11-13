@@ -35,7 +35,10 @@ def convert_dictionary(data):
 with session as sessao:
     try:
         # Query active services and order them by case and creation date
-        services_query = sessao.query(Atendimento).filter(Atendimento.st_ativo == True).order_by(Atendimento.co_caso).order_by(Atendimento.dh_criacao)
+        services_query = sessao.query(Atendimento) \
+        .filter(Atendimento.st_ativo == True) \
+        .order_by(Atendimento.co_caso) \
+        .order_by(Atendimento.dh_criacao)
         
         # Convert the result to a list of dictionaries using the `convert_dictionary` function
         services_duplicates = [convert_dictionary(data) for data in services_query.all()]
