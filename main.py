@@ -1,29 +1,10 @@
-import os
-import dotenv
-from database import Atendimento
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from database.conn import session
+from database.database import Atendimento
 from sqlalchemy.exc import SQLAlchemyError
-
-dotenv.load_dotenv()
-
-# Getting database url
-URL = os.environ['URL']
-
-# Create a database engine using the specified URL
-engine = create_engine(URL)
-
-# Create a session factory using the engine
-Session = sessionmaker(bind=engine)
-
-# Open a session using the session factory
-session = Session()
-
-print('Connection with the database established.')
 
 
 def convert_dictionary(data):
-    ''' Converts an 'dado' object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
+    ''' Converts an data object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
     if data:
         return {
             column.name: getattr(data, column.name)

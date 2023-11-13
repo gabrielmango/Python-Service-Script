@@ -16,5 +16,3 @@ Session = sessionmaker(bind=engine)
 
 # Open a session using the session factory
 session = Session()
-
-print(session)
