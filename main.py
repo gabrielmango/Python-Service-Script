@@ -3,15 +3,6 @@ from database.database import Atendimento
 from sqlalchemy.exc import SQLAlchemyError
 
 
-def convert_dictionary(data):
-    ''' Converts an data object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
-    if data:
-        return {
-            column.name: getattr(data, column.name)
-            for column in Atendimento.__table__.columns
-        }
-
-
 def query_cases():
     ''' Queries all active cases in the database.'''
     with session as sess:
@@ -27,6 +18,7 @@ def query_cases():
             sess.rollback()
             raise e
 
+
 def query_service(case):
     ''' Queries all services in the case provided. '''
     with session as sess:
@@ -41,6 +33,7 @@ def query_service(case):
             # Rollback the transaction in case of an error
             sess.rollback()
             raise e 
+
 
 def create_file(services_list, file_name):
     if services_list:
