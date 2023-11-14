@@ -41,7 +41,14 @@ def query_service(case):
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error
             sess.rollback()
-            raise e   
+            raise e 
+
+def create_file(services_list, file_name):
+    if services_list:
+        for service in services_list:
+            with open(file_name, 'a+') as file:
+                text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {service[0]}; \n"
+                file.write(text)
 
 
 cases = query_cases()
@@ -62,9 +69,5 @@ for case in cases:
                 unique_texts.add(text)
             else:
                 services_excluded.append(service)
-
-        if services_excluded:
-            for service in services_excluded:
-                with open('update_services.txt', 'a+') as arquivo:
-                    text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {service[0]}; \n"
-                    arquivo.write(text)
+        
+        create_file(services_excluded, 'update_services.sql')
