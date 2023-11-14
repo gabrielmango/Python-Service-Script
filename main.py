@@ -76,3 +76,7 @@ def main():
             services_excluded = create_list_excluded(services_of_case)
 
             create_file(services_excluded, 'update_services.sql')
+
+
+if __name__ == '__main__':
+    main()
