@@ -19,7 +19,7 @@ def query_cases():
             sess.rollback()
             raise e
 
-def query_service(case):
+def query_service_description(case):
     '''
     Queries all services in the provided case.
 
@@ -98,7 +98,7 @@ def main():
     cases = query_cases()
 
     for case in cases:
-        find_duplicate_services(query_service(case))
+        find_duplicate_services(query_service_description(case))
 
 if __name__ == '__main__':
     main()
