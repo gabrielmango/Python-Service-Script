@@ -62,3 +62,9 @@ for case in cases:
                 unique_texts.add(text)
             else:
                 services_excluded.append(service)
+
+        if services_excluded:
+            for service in services_excluded:
+                with open('update_services.txt', 'a+') as arquivo:
+                    text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {service[0]}; \n"
+                    arquivo.write(text)
