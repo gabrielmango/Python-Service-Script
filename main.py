@@ -43,5 +43,22 @@ def query_service(case):
             sess.rollback()
             raise e   
 
-# Create a list of unique case numbers by converting the duplicates to a set and back to a list
+
 cases = query_cases()
+
+for case in cases:
+    services_of_case = query_service(case)
+
+    if len(services_of_case) > 1:
+
+        unique_texts = set()
+
+        services_excluded = []
+
+        for service in services_of_case:
+            text = service[1]
+
+            if text not in unique_texts:
+                unique_texts.add(text)
+            else:
+                services_excluded.append(service)
