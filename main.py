@@ -2,7 +2,6 @@ from database.conn import session
 from database.database import Atendimento
 from sqlalchemy.exc import SQLAlchemyError
 
-from pprint import pprint
 
 def convert_dictionary(data):
     ''' Converts an data object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
@@ -66,13 +65,14 @@ def create_list_excluded(services_list):
         return services_excluded
 
 
-cases = query_cases()
+def main():
+    cases = query_cases()
 
-for case in cases:
-    services_of_case = query_service(case)
+    for case in cases:
+        services_of_case = query_service(case)
 
-    if len(services_of_case) > 1:
+        if len(services_of_case) > 1:
+            
+            services_excluded = create_list_excluded(services_of_case)
 
-        services_excluded = create_list_excluded(services_of_case)
-               
-        create_file(services_excluded, 'update_services.sql')
+            create_file(services_excluded, 'update_services.sql')
