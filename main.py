@@ -81,6 +81,11 @@ def duplicate_services(services_of_case):
         services_excluded = create_list_excluded(services_of_case)
         create_file(services_excluded, 'update_services.sql')
 
+def find_duplicate_services(services_of_case):
+    if len(services_of_case) > 1:
+        pass
+
+
 def main():
     '''
     Main function to perform the workflow:
@@ -93,8 +98,7 @@ def main():
     cases = query_cases()
 
     for case in cases:
-        services_of_case = query_service(case)
-        duplicate_services(services_of_case)
+        find_duplicate_services(query_service(case))
 
 if __name__ == '__main__':
     main()
