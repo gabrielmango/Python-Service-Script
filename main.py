@@ -1,96 +1,97 @@
-import os
-import dotenv
-from database import Atendimento
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from database.conn import session
+from database.database import Atendimento
 from sqlalchemy.exc import SQLAlchemyError
 
-dotenv.load_dotenv()
 
-# Getting database url
-URL = os.environ['URL']
+def query_cases():
+    '''
+    Queries all active cases in the database.
 
-# Create a database engine using the specified URL
-engine = create_engine(URL)
+    Returns:
+        list: List of unique active cases.
+    '''
+    with session as sess:
+        try:
+            query_cases = sess.query(Atendimento.co_caso).filter(Atendimento.st_ativo == True)
+            cases = [case[0] for case in query_cases.all()]
+            return list(set(cases))
+        except SQLAlchemyError as e:
+            sess.rollback()
+            raise e
 
-# Create a session factory using the engine
-Session = sessionmaker(bind=engine)
+def query_service(case):
+    '''
+    Queries all services in the provided case.
 
-# Open a session using the session factory
-session = Session()
+    Args:
+        case (int): Case identifier.
 
-print('Connection with the database established.')
+    Returns:
+        list: List of services in the specified case.
+    '''
+    with session as sess:
+        try:
+            query_service = sess.query(Atendimento.co_seq_atendimento, Atendimento.ds_atendimento).filter(Atendimento.co_caso == case)
+            services = [service[0] for service in query_service.all()]
+            return query_service.all()
+        except SQLAlchemyError as e:
+            sess.rollback()
+            raise e 
 
+def create_file(services_list, file_name):
+    '''
+    Creates an SQL file with UPDATE statements to deactivate services.
 
-def convert_dictionary(data):
-    ''' Converts an 'dado' object into a dictionary, mapping attributes to column names based on the 'Atendimento' table structure.'''
-    if data:
-        return {
-            column.name: getattr(data, column.name)
-            for column in Atendimento.__table__.columns
-        }
+    Args:
+        services_list (list): List of services to be deactivated.
+        file_name (str): Name of the SQL file to be created.
+    '''
+    if services_list:
+        for service in services_list:
+            with open(file_name, 'a+') as file:
+                text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {service[0]}; \n"
+                file.write(text)
 
+def create_list_excluded(services_list):
+    '''
+    Creates a list of excluded services based on duplicate texts.
 
-# Query data from the tb_atendimento table
-with session as sessao:
-    try:
-        # Query active services and order them by case and creation date
-        services_query = sessao.query(Atendimento).filter(Atendimento.st_ativo == True).order_by(Atendimento.co_caso).order_by(Atendimento.dh_criacao)
-        
-        # Convert the result to a list of dictionaries using the `convert_dictionary` function
-        services_duplicates = [convert_dictionary(data) for data in services_query.all()]
+    Args:
+        services_list (list): List of services to check for duplicates.
 
-        # Query cases and store the case numbers in a list
-        case_query = sessao.query(Atendimento.co_caso)
-        cases_duplicates = [data[0] for data in case_query.all()]
+    Returns:
+        list: List of excluded services.
+    '''
+    unique_texts = set()
+    services_excluded = []
 
-    except SQLAlchemyError as e:
-        # Rollback the transaction in case of an error
-        session.rollback() 
+    if services_list:
+        for service in services_list:
+            text = service[1]
 
-        raise e 
-
-# Create a list of unique case numbers by converting the duplicates to a set and back to a list
-cases = list(set(cases_duplicates))
-
-print('Duplicate data query returned.')
-
-for case in cases:
-    # Create an empty list to store services related to a case
-    services_of_case = []  
-
-    # Add services related to the case to the list
-    for service in services_duplicates:
-        if service['co_caso'] == case:
-            services_of_case.append(service)
-
-    # Check if there are duplicate services
-    if len(services_of_case) > 1: 
-
-        # Create a set to store unique service texts
-        unique_texts = set() 
-
-        # Create a list to store duplicate services to be excluded
-        services_excluded = []  
-
-        for service in services_of_case:
-            text = service['ds_atendimento']
             if text not in unique_texts:
-                # Add the service's text to the set of unique texts
-                unique_texts.add(text)  
+                unique_texts.add(text)
             else:
-                # Add duplicate services to the list
-                services_excluded.append(service)  
+                services_excluded.append(service)
+        return services_excluded
 
-        # Check if there are duplicate services to be excluded
-        if services_excluded:  
-            for dado in services_excluded:
-                with open('update_services.txt', 'a+') as arquivo:
-                    text = f"UPDATE public.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {dado['co_seq_atendimento']}; \n"
-                    
-                    # Write SQL statements to mark services as inactive
-                    arquivo.write(text)  
+def main():
+    '''
+    Main function to perform the workflow:
 
+    1. Query all active cases.
+    2. For each case, query its services.
+    3. Identify and create a list of excluded services with duplicate texts.
+    4. Create an SQL file with UPDATE statements to deactivate excluded services.
+    '''
+    cases = query_cases()
 
-print('Process finished. File with Updates generated successfully!')
-    
+    for case in cases:
+        services_of_case = query_service(case)
+
+        if len(services_of_case) > 1:
+            services_excluded = create_list_excluded(services_of_case)
+            create_file(services_excluded, 'update_services.sql')
+
+if __name__ == '__main__':
+    main()
