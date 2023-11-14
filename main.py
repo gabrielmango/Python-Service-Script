@@ -51,6 +51,21 @@ def create_file(services_list, file_name):
                 file.write(text)
 
 
+def create_list_excluded(services_list):
+    unique_texts = set()
+    services_excluded = []
+
+    if services_list:
+        for service in services_list:
+            text = service[1]
+
+            if text not in unique_texts:
+                unique_texts.add(text)
+            else:
+                services_excluded.append(service)
+        return services_excluded
+
+
 cases = query_cases()
 
 for case in cases:
@@ -58,16 +73,6 @@ for case in cases:
 
     if len(services_of_case) > 1:
 
-        unique_texts = set()
-
-        services_excluded = []
-
-        for service in services_of_case:
-            text = service[1]
-
-            if text not in unique_texts:
-                unique_texts.add(text)
-            else:
-                services_excluded.append(service)
-        
+        services_excluded = create_list_excluded(services_of_case)
+               
         create_file(services_excluded, 'update_services.sql')
