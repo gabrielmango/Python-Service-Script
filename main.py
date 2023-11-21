@@ -5,12 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 def query_cases():
-    '''
-    Queries all active cases in the database.
-
-    Returns:
-        list: List of unique active cases.
-    '''
+    ''' Queries all active cases in the database. '''
     with session as sess:
         try:
             query_cases = sess.query(Atendimento.co_caso).filter(Atendimento.st_ativo == True)
