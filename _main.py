@@ -14,9 +14,27 @@ def query_cases():
             raise e
 
 
+def query_services(case):
+    ''' Queries all services in the provided case. '''
+    with session as s:
+        try:
+            query_service = s.query(
+                Atendimento.co_seq_atendimento, 
+                Atendimento.ds_atendimento, 
+                Atendimento.dh_criacao
+                ).filter(Atendimento.co_caso == case)
+            return query_service.all()
+        except SQLAlchemyError as e:
+            s.rollback()
+            raise e
+
+
 def main():
     """ Executes all functionalities of this script. """
     cases = query_cases()
+    for case in cases:
+        services = query_services(case)
+        print(f'The case {case} has {len(services)} services.')
 
 
 if __name__ == '__main__':
