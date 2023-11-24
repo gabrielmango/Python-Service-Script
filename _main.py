@@ -42,12 +42,29 @@ def duplicate_services_created(services, timeout=59):
         return duplicate_services
 
 
+def duplicate_services_description(services):
+    """ Check duplicate services for repeated description. """
+    unique_texts = set()
+    services_excluded = []
+
+    if services:
+        for service in services:
+            description = service[1]
+
+            if description not in unique_texts:
+                unique_texts.add(description)
+            else:
+                services_excluded.append(service)
+        return services_excluded
+
+
 def main():
     """ Executes all functionalities of this script. """
     cases = query_cases()
     for case in cases:
         services = query_services(case)
         duplicate_services = duplicate_services_created(services)
+        services_excluded = duplicate_services_description(duplicate_services)
 
 
 if __name__ == '__main__':
