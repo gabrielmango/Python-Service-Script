@@ -22,11 +22,24 @@ def query_services(case):
                 Atendimento.co_seq_atendimento, 
                 Atendimento.ds_atendimento, 
                 Atendimento.dh_criacao
-                ).filter(Atendimento.co_caso == case)
+                ).filter(Atendimento.co_caso == case, Atendimento.st_ativo == True)
             return query_service.all()
         except SQLAlchemyError as e:
             s.rollback()
             raise e
+
+
+def duplicate_services_created(services, timeout=59):
+    """ Check duplicate services by difference in creation date. """
+    if len(services) > 1:
+        for index in range(len(services) - 1):
+            duplicate_services = []
+            diff = services[index + 1][2] - services[index][2]
+
+            if diff.total_seconds() > -timeout and diff.total_seconds() < timeout:
+                duplicate_services.append(services[index])
+                duplicate_services.append(services[index + 1])
+        return duplicate_services
 
 
 def main():
@@ -34,7 +47,7 @@ def main():
     cases = query_cases()
     for case in cases:
         services = query_services(case)
-        print(f'The case {case} has {len(services)} services.')
+        duplicate_services = duplicate_services_created(services)
 
 
 if __name__ == '__main__':
