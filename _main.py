@@ -58,6 +58,15 @@ def duplicate_services_description(services):
         return services_excluded
 
 
+def create_file(services, file_name, schema='public'):
+    """ Create file with update services. """
+    if services:
+        for service in services:
+            with open(file_name, 'a+') as file:
+                text = f"UPDATE {schema}.tb_atendimento SET st_ativo = FALSE WHERE co_seq_atendimento = {service[0]}; \n" 
+                file.write(text)
+
+
 def main():
     """ Executes all functionalities of this script. """
     cases = query_cases()
@@ -65,6 +74,7 @@ def main():
         services = query_services(case)
         duplicate_services = duplicate_services_created(services)
         services_excluded = duplicate_services_description(duplicate_services)
+        create_file(services_excluded, 'services_excluded.sql')
 
 
 if __name__ == '__main__':
